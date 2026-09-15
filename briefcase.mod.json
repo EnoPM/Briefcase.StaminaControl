@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "briefcase.suspicion-control",
+  "name": "Suspicion Control",
+  "author": "BriefcaseNative",
+  "version": "0.3.0",
+  "entry": "Briefcase.SuspicionControl.dll",
+  "minimumApi": 1,
+  "environment": "server",
+  "loadPhase": "ready",
+  "capabilities": [
+    "log",
+    "config",
+    "game-thread",
+    "unreal.reflection",
+    "unreal.hooks",
+    "native.hooks",
+    "unreal.find",
+    "unreal.write",
+    "unreal.invoke",
+    "unreal.lifecycle"
+  ],
+  "dependencies": []
+}

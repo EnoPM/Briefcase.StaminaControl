@@ -1,0 +1,75 @@
+{
+  "/Script/DeceiveInc.DeceiveIncMatchGameState:HandleNewSpyLoadoutCompleted": {
+    "parameterSize": 8,
+    "flags": 525313,
+    "parameters": [
+      {
+        "name": "ToolLoadout",
+        "type": "object",
+        "offset": 0
+      }
+    ]
+  },
+  "/Script/DeceiveInc.DeceiveIncGameStateBase:SetCurrentPhaseTimeLeftInSeconds": {
+    "parameterSize": 4,
+    "flags": 67240961,
+    "parameters": [
+      {
+        "name": "SecondsLeft",
+        "type": "int32",
+        "offset": 0
+      }
+    ]
+  },
+  "/Script/DeceiveInc.DeceiveIncGameStateBase:GetCurrentPhaseTimeLeftInSeconds": {
+    "parameterSize": 4,
+    "flags": 1409418241,
+    "parameters": [
+      {
+        "name": "ReturnValue",
+        "type": "int32",
+        "offset": 0,
+        "return": true
+      }
+    ]
+  },
+  "/Script/DeceiveInc.Spy:ReduceStamina": {
+    "parameterSize": 4,
+    "flags": 67634177,
+    "parameters": [
+      {
+        "name": "Delta",
+        "type": "float",
+        "offset": 0
+      }
+    ]
+  },
+  "/Script/DeceiveInc.Spy:ResetStaminaToMax": {
+    "parameterSize": 0,
+    "flags": 67634177,
+    "parameters": []
+  },
+  "/Script/DeceiveInc.Spy:GetRunDrainEnabled": {
+    "parameterSize": 1,
+    "flags": 1409811457,
+    "parameters": [
+      {
+        "name": "ReturnValue",
+        "type": "bool",
+        "offset": 0,
+        "return": true
+      }
+    ]
+  },
+  "/Script/DeceiveInc.Spy:SetRunDrainEnabled": {
+    "parameterSize": 1,
+    "flags": 67634177,
+    "parameters": [
+      {
+        "name": "bEnabled",
+        "type": "bool",
+        "offset": 0
+      }
+    ]
+  }
+}

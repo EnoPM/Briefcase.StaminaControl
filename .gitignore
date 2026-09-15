@@ -1,0 +1,8 @@
+/build/
+/dist/
+/.sdk/
+/.vs/
+/.idea/
+/cmake-build-*/
+*.pdb
+*.user
