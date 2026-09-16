@@ -6,12 +6,12 @@
 namespace suspicion {
 inline constexpr const char *schema = R"({"type":"object","properties":{
  "multiplier":{"type":"number","minimum":0.0,"maximum":10.0,"default":1.0,"description":"Suspicion gain multiplier. 0 disables running drain and discrete stamina losses; 1 preserves vanilla. Restart required."},
- "diagnostics":{"type":"boolean","default":true,"description":"Enable bounded configuration and native before/after logs. Gameplay settings remain active when false."},
+ "diagnostics":{"type":"boolean","default":false,"description":"Enable bounded configuration and native before/after logs. Gameplay settings remain active when false."},
  "maximumSamples":{"type":"integer","minimum":1,"maximum":1000,"default":120,"description":"Maximum before/after drain samples per server run, plus 16 initialization samples."}
 }})";
 struct Config {
     double multiplier = 1;
-    bool diagnostics = true;
+    bool diagnostics = false;
     uint32_t maximum = 120;
     static Config parse(const std::string &text) {
         auto j = nlohmann::json::parse(text);

@@ -76,7 +76,7 @@ Edit `Briefcase/Mods/briefcase.suspicion-control/Data/config.json`:
 ```json
 {
   "multiplier": 1,
-  "diagnostics": true,
+  "diagnostics": false,
   "maximumSamples": 120
 }
 ```
@@ -84,7 +84,7 @@ Edit `Briefcase/Mods/briefcase.suspicion-control/Data/config.json`:
 | Setting | Allowed values | Description |
 | --- | --- | --- |
 | `multiplier` | `0` to `10` | Multiplies suspicion-related stamina drain. `0` disables running drain and discrete stamina losses; `1` preserves vanilla behavior. |
-| `diagnostics` | `true` or `false` | Enables bounded diagnostic logging. |
+| `diagnostics` | `true` or `false` | Enables bounded diagnostic logging. Disabled by default. |
 | `maximumSamples` | `1` to `1000` | Maximum number of diagnostic samples retained or logged. |
 
 This mod controls stamina losses associated with the suspicion system; it does not modify a separate heat system. Restart the server after changing these values. The settings can also be changed from the Briefcase server administration interface.

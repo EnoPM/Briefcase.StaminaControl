@@ -1,5 +1,5 @@
 {
   "multiplier": 1,
-  "diagnostics": true,
+  "diagnostics": false,
   "maximumSamples": 120
 }

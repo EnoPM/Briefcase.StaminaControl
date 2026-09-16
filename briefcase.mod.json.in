@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "briefcase.suspicion-control",
   "name": "Suspicion Control",
-  "author": "BriefcaseNative",
+  "author": "EnoPM",
   "version": "@MOD_VERSION@",
   "entry": "Briefcase.SuspicionControl.dll",
   "minimumApi": 1,

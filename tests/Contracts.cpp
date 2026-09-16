@@ -21,7 +21,7 @@ int main() {
         auto schema = nlohmann::json::parse(suspicion::schema);
         auto defaults = config_defaults(schema);
         auto c = suspicion::Config::parse(defaults.dump());
-        check(c.multiplier == 1 && c.diagnostics && c.maximum == 120);
+        check(c.multiplier == 1 && !c.diagnostics && c.maximum == 120);
         for (double m : {0., 0.1, 0.5, 1., 10.}) {
             auto j = defaults;
             j["multiplier"] = m;
