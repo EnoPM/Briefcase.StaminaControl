@@ -19,12 +19,20 @@ jobs:
   windows:
     runs-on: windows-2025
     timeout-minutes: 30
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      CMAKE_C_COMPILER_LAUNCHER: sccache
+      CMAKE_CXX_COMPILER_LAUNCHER: sccache
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Configure compiler cache
+        uses: mozilla-actions/sccache-action@fd02668681acd5f960e1372061bee5e3e987195c # v0.0.11
+        with:
+          version: v0.16.0
       - name: Validate source
         shell: pwsh
         run: |
@@ -34,7 +42,7 @@ jobs:
       - name: Fetch SDK, build and test
         shell: pwsh
         run: ./scripts/Build.ps1
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-mod
           path: |
@@ -44,12 +52,20 @@ jobs:
   linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      CMAKE_C_COMPILER_LAUNCHER: sccache
+      CMAKE_CXX_COMPILER_LAUNCHER: sccache
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Configure compiler cache
+        uses: mozilla-actions/sccache-action@fd02668681acd5f960e1372061bee5e3e987195c # v0.0.11
+        with:
+          version: v0.16.0
       - name: Validate source and install compiler
         run: |
           version=$(cat VERSION)
@@ -60,7 +76,7 @@ jobs:
         run: |
           sdk=$(python3 scripts/fetch-sdk.py)
           python3 scripts/build-linux.py --sdk "$sdk"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: linux-mod
           path: |
@@ -79,7 +95,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: '*-mod'
           merge-multiple: true
