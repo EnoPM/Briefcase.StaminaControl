@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       draft:
-        description: Keep the private release as a draft
+        description: Keep the release as a draft
         type: boolean
         default: false
 permissions:
@@ -102,7 +102,7 @@ jobs:
           path: dist
       - name: Test publication contracts
         run: python3 tests/Publication.py
-      - name: Publish both verified packages in the private repository
+      - name: Publish both verified packages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DRAFT: ${{ inputs.draft }}

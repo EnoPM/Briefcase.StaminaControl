@@ -1,45 +1,133 @@
 # Briefcase Suspicion Control
 
-Suspicion Control is a native BriefcaseNative server mod that configures the suspicion system on a Deceive Inc. dedicated server. The repository retains its historical `Briefcase.StaminaControl` name for compatibility.
+Suspicion Control adjusts the stamina and suspicion drain applied by a Deceive Inc. dedicated server. The repository keeps its historical `Briefcase.StaminaControl` name for compatibility. This is a native server mod for [BriefcaseNative](https://github.com/EnoPM/BriefcaseNative) and supports Windows x64 and Linux x64 servers.
 
-## Installation
+## Complete server installation
 
-1. Install [BriefcaseNative](https://github.com/EnoPM/BriefcaseNative) on the dedicated server.
-2. Download the release archive that matches the server platform: `windows-x64` or `linux-x64`.
-3. Stop the server and extract the archive into its binary directory (`Binaries/Win64` on Windows or `Binaries/Linux` on Linux).
-4. Keep an existing `Briefcase/Mods/briefcase.suspicion-control/Data/config.json` file when updating.
-5. Start the server through the Briefcase launcher.
+### 1. Install the Deceive Inc. dedicated server
 
-BriefcaseNative 0.6.0 and later can update an installed copy automatically before the server starts. The mod repository must be publicly accessible for anonymous update checks.
+Install [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD), then download the dedicated server anonymously. App `5007710` is the Deceive Inc. dedicated server.
 
-## Configuration
-
-The configuration is stored in `Briefcase/Mods/briefcase.suspicion-control/Data/config.json`. It can also be edited through the Briefcase server administration interface.
-
-## Build and test
-
-Windows builds require the Visual Studio C++ x64 tools and PowerShell 7:
+On Windows:
 
 ```powershell
-./scripts/Build.ps1
+steamcmd.exe +force_install_dir "C:\DeceiveIncServer" +login anonymous +app_update 5007710 validate +quit
 ```
 
-The script downloads the pinned BriefcaseNative SDK, compiles and tests the real mod DLL against a mock ABI host, and creates the release archive. To use an extracted SDK without downloading it:
+On Linux:
+
+```bash
+./steamcmd.sh +force_install_dir /opt/deceive-inc-server +login anonymous +app_update 5007710 validate +quit
+```
+
+The server binary directory used throughout this guide is:
+
+- Windows: `C:\DeceiveIncServer\DeceiveInc\Binaries\Win64`
+- Linux: `/opt/deceive-inc-server/DeceiveInc/Binaries/Linux`
+
+### 2. Install BriefcaseNative
+
+Stop the server and open the [latest BriefcaseNative release](https://github.com/EnoPM/BriefcaseNative/releases/latest).
+
+On Windows, download `BriefcaseNative-Server-windows-x64-<version>.zip` and extract it directly into `DeceiveInc\Binaries\Win64`. Create `Briefcase\launch.json` in that directory:
+
+```json
+{
+  "serverWin64": "C:\\DeceiveIncServer\\DeceiveInc\\Binaries\\Win64"
+}
+```
+
+On Linux, install the native runtime dependencies. For Ubuntu 24.04:
+
+```bash
+sudo apt-get update
+sudo apt-get install --no-install-recommends libcurl4t64 libarchive13t64 ca-certificates unzip
+```
+
+Download `BriefcaseNative-Server-linux-x64-<version>.zip`, extract it directly into `DeceiveInc/Binaries/Linux`, and make the launcher executable:
+
+```bash
+chmod +x Briefcase.ServerLauncher
+```
+
+### 3. Install Suspicion Control
+
+Open the [latest Suspicion Control release](https://github.com/EnoPM/Briefcase.StaminaControl/releases/latest) and download the archive for the server operating system:
+
+- `Briefcase.StaminaControl-windows-x64-<version>.zip`
+- `Briefcase.StaminaControl-linux-x64-<version>.zip`
+
+Stop the server and extract the archive directly into the same server binary directory used for BriefcaseNative. The resulting layout must include:
+
+```text
+DeceiveInc/
+└── Binaries/
+    └── Win64/ or Linux/
+        ├── Briefcase.ServerLauncher[.exe]
+        └── Briefcase/
+            └── Mods/
+                └── briefcase.suspicion-control/
+                    ├── briefcase.mod.json
+                    ├── Briefcase.SuspicionControl.dll or Briefcase.SuspicionControl.so
+                    └── Data/
+                        └── config.json
+```
+
+Do not extract the archive into a second `Win64`, `Linux`, or `Briefcase` directory. When updating manually, keep the existing `Data/config.json` file.
+
+### 4. Configure suspicion behavior
+
+Edit `Briefcase/Mods/briefcase.suspicion-control/Data/config.json`:
+
+```json
+{
+  "multiplier": 1,
+  "diagnostics": true,
+  "maximumSamples": 120
+}
+```
+
+| Setting | Allowed values | Description |
+| --- | --- | --- |
+| `multiplier` | `0` to `10` | Multiplies suspicion-related stamina drain. `0` disables running drain and discrete stamina losses; `1` preserves vanilla behavior. |
+| `diagnostics` | `true` or `false` | Enables bounded diagnostic logging. |
+| `maximumSamples` | `1` to `1000` | Maximum number of diagnostic samples retained or logged. |
+
+This mod controls stamina losses associated with the suspicion system; it does not modify a separate heat system. Restart the server after changing these values. The settings can also be changed from the Briefcase server administration interface.
+
+### 5. Start and verify the server
+
+Always start the server through the Briefcase launcher so framework and mod updates run before the game starts.
+
+On Windows, run this from `DeceiveInc\Binaries\Win64`:
 
 ```powershell
-./scripts/Build.ps1 -SdkPath C:/path/to/BriefcaseNative-SDK
+.\Briefcase.ServerLauncher.exe
 ```
 
-Linux builds require x64 Linux, Clang 19, CMake 3.28, Ninja, and Python 3:
+On Linux, run this from `DeceiveInc/Binaries/Linux`:
 
-```sh
-python3 scripts/build-linux.py --sdk /path/to/BriefcaseNative-SDK
+```bash
+./Briefcase.ServerLauncher
 ```
 
-The Linux package contains native code and data and does not require Python at runtime.
+Check `Briefcase/Logs/BriefcaseNative.log` for a successful load of `briefcase.suspicion-control`. Launcher and update details are written to `Briefcase/Logs/launcher.log` and `Briefcase/Updates/last-result.json`.
 
-## Releases
+## Automatic updates
 
-`VERSION` is the only source of the mod version. A push to `main` that changes this file builds and tests Windows and Linux, then publishes both native archives. The workflow can also be started manually and can create a draft release.
+BriefcaseNative 0.6.0 or later checks this repository's stable releases before starting the server. Automatic updates work when:
 
-GitHub records the SHA-256 digest of each uploaded asset. Existing release versions are never replaced.
+- this repository is publicly accessible;
+- the installed manifest contains the `github-releases` update information supplied by a current release;
+- `Briefcase/updater.json` has `enabled` set to `true` and does not set `updateMods` to `false`;
+- the server is started or restarted through `Briefcase.ServerLauncher`.
+
+If the mod was installed before automatic update metadata was added, install the latest release manually once. Briefcase preserves `Data/config.json` during subsequent automatic updates. A network or validation failure keeps the installed version and lets the server start.
+
+## Remove the mod
+
+Stop the server, remove `Briefcase/Mods/briefcase.suspicion-control`, then start the server through the Briefcase launcher.
+
+## Contributing
+
+Build, test, and release information is kept in [CONTRIBUTING.md](CONTRIBUTING.md).
