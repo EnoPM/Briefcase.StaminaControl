@@ -10,9 +10,9 @@ def source(root, version, commit):
     require(re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', version), 'Invalid version')
     require(re.fullmatch('[a-f0-9]{40}', commit), 'Invalid source commit')
     config=json.loads((root/'mod-build.json').read_text())
-    manifest=json.loads((root/'briefcase.mod.json').read_text())
-    match=re.search(r'project\([A-Za-z0-9_.-]+ VERSION (\d+\.\d+\.\d+)', (root/'CMakeLists.txt').read_text())
-    require(match and match[1]==version and manifest['version']==version, 'Release/source version mismatch')
+    require((root/'VERSION').read_text().strip()==version, 'Release/source version mismatch')
+    manifest=json.loads((root/'briefcase.mod.json.in').read_text().replace('@MOD_VERSION@',version))
+    require(manifest['version']==version, 'Manifest must use VERSION')
     require(command('git','-C',str(root),'rev-parse','HEAD')==commit, 'Release/source commit mismatch')
     try:
         tag_commit=command('git','-C',str(root),'rev-parse','--verify','--quiet','refs/tags/v'+version+'^{commit}')

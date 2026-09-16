@@ -11,7 +11,9 @@ Les tests utilisént la vraie DLL avec un faux backend ABI, sans jeu ni UE4SS.
 
 ## Publier
 Publier d'abord le SDK du framework, puis utilisér Actions -> Publish mod release -> Run workflow.
-La version doit correspondre a CMakeLists.txt et briefcase.mod.json. Le mode brouillon est disponible.
+La version se configure uniquement dans `VERSION`. CMake genere le manifeste a partir de `briefcase.mod.json.in`.
+Un push sur `main` modifiant `VERSION` compile, teste et publie les deux plateformes dans ce depot prive.
+Le workflow manuel utilise aussi `VERSION` et conserve une option brouillon. Une release existante n'est jamais remplacee.
 Le workflow compile et teste Windows et Linux, puis publie les deux ZIP et leurs SHA-256 dans une seule release. Il refuse de publier si le dépôt n'est pas privé. Le SDK 0.5.0 est épinglé par son empreinte dans mod-build.json.
 Ne jamais remplacer une version deja distribuee.
 

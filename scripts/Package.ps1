@@ -2,7 +2,9 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $project=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$manifest=Get-Content -LiteralPath (Join-Path $project 'briefcase.mod.json') -Raw|ConvertFrom-Json
+$manifest=& (Join-Path $PSScriptRoot 'Read-Manifest.ps1') -ProjectRoot $project
+$installed=Get-Content -LiteralPath (Join-Path $Stage "Briefcase/Mods/$($manifest.id)/briefcase.mod.json") -Raw|ConvertFrom-Json
+if ($installed.version -cne $manifest.version) { throw 'Packaged manifest does not match VERSION' }
 $config=Get-Content -LiteralPath (Join-Path $project 'mod-build.json') -Raw|ConvertFrom-Json
 if($manifest.id -cnotmatch '^[a-z0-9.-]+$' -or $manifest.version -cnotmatch '^\d+\.\d+\.\d+$' -or $manifest.entry -cnotmatch '^[A-Za-z0-9_.-]+\.dll$'){throw 'Invalid mod manifest'}
 if($manifest.environment -ne 'server' -or $manifest.minimumApi -ne 1){throw 'Unexpected environment or ABI'}

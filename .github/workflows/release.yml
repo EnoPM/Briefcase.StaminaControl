@@ -1,12 +1,11 @@
 name: Publish mod release
-run-name: Mod ${{ inputs.version }} - Windows and Linux
+run-name: Mod release from VERSION - Windows and Linux
 on:
+  push:
+    branches: [main]
+    paths: [VERSION]
   workflow_dispatch:
     inputs:
-      version:
-        description: Version in CMakeLists.txt and briefcase.mod.json
-        required: true
-        type: string
       draft:
         description: Keep the private release as a draft
         type: boolean
@@ -28,9 +27,10 @@ jobs:
           persist-credentials: false
       - name: Validate source
         shell: pwsh
-        env:
-          VERSION: ${{ inputs.version }}
-        run: python scripts/publish.py --source-only --version $env:VERSION --commit $env:GITHUB_SHA
+        run: |
+          $version = (Get-Content VERSION -Raw).Trim()
+          python scripts/publish.py --source-only --version $version --commit $env:GITHUB_SHA
+          if ($LASTEXITCODE) { throw 'Invalid release source' }
       - name: Fetch SDK, build and test
         shell: pwsh
         run: ./scripts/Build.ps1
@@ -52,10 +52,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Validate source and install compiler
-        env:
-          VERSION: ${{ inputs.version }}
         run: |
-          python3 scripts/publish.py --source-only --version "$VERSION" --commit "$GITHUB_SHA"
+          version=$(cat VERSION)
+          python3 scripts/publish.py --source-only --version "$version" --commit "$GITHUB_SHA"
           sudo apt-get update
           sudo apt-get install --no-install-recommends clang-19 cmake ninja-build
       - name: Fetch SDK, build and test
@@ -92,9 +91,9 @@ jobs:
       - name: Publish both verified packages in the private repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ inputs.version }}
           DRAFT: ${{ inputs.draft }}
         run: |
           args=()
           if [[ "$DRAFT" == true ]]; then args+=(--draft); fi
-          python3 scripts/publish.py --version "$VERSION" --commit "$GITHUB_SHA" --repository "$GITHUB_REPOSITORY" "${args[@]}"
+          version=$(cat VERSION)
+          python3 scripts/publish.py --version "$version" --commit "$GITHUB_SHA" --repository "$GITHUB_REPOSITORY" "${args[@]}"

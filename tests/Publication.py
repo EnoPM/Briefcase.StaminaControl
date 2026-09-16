@@ -9,8 +9,8 @@ class Publication(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
         self.config=dict(repository='ExampleMod',sdkVersion='0.5.0',sdkSha256='a'*64)
         self.manifest=dict(id='example.mod',environment='server',minimumApi=1,version='1.0.0',entry='Example.dll')
-        (self.root/'mod-build.json').write_text(json.dumps(self.config));(self.root/'briefcase.mod.json').write_text(json.dumps(self.manifest))
-        (self.root/'CMakeLists.txt').write_text('project(ExampleMod VERSION 1.0.0 LANGUAGES CXX)');(self.root/'dist').mkdir()
+        (self.root/'mod-build.json').write_text(json.dumps(self.config));(self.root/'briefcase.mod.json.in').write_text(json.dumps(dict(self.manifest,version='@MOD_VERSION@')))
+        (self.root/'VERSION').write_text('1.0.0\n');(self.root/'dist').mkdir()
         self.commit='b'*40;self.repository='Example/ExampleMod';self.files=[]
         for platform in ('windows','linux'):
             manifest=dict(self.manifest)
@@ -39,6 +39,16 @@ class Publication(unittest.TestCase):
         with patch.object(p,'command',side_effect=self.cli):p.publish(self.root,self.repository,'1.0.0',self.commit)
     def test_both_platforms_published(self):
         self.publish();self.assertTrue(self.created and self.edited)
+    def test_version_file_alone_drives_generated_manifest(self):
+        (self.root/'VERSION').write_text('1.2.3\n')
+        with patch.object(p,'command',side_effect=self.cli):
+            _,manifest=p.source(self.root,'1.2.3',self.commit)
+        self.assertEqual(manifest['version'],'1.2.3')
+    def test_invalid_or_mismatched_version_rejected(self):
+        for value in ('v1.0.0','01.0.0','1.0.0-beta','1.0.0\ninjected','2.0.0'):
+            (self.root/'VERSION').write_text(value)
+            with self.assertRaises(ValueError):self.publish()
+        self.assertFalse(self.created)
     def test_public_repository_rejected(self):
         self.private=False
         with self.assertRaises(ValueError):self.publish()
