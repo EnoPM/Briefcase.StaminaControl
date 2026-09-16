@@ -1,4 +1,4 @@
-"""Validate both native packages and publish them together in a private repository."""
+"""Validate both native packages and publish them together."""
 import argparse, hashlib, json, re, struct, subprocess, tempfile, zipfile
 from pathlib import Path
 
@@ -58,7 +58,7 @@ def publish(root, repository, version, commit, draft=False):
     require(re.fullmatch('[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',repository) and repository.split('/')[1]==config['repository'],'Wrong destination repository')
     files=[archive(root,config,manifest,version,platform) for platform in ('windows','linux')]
     info=json.loads(command('gh','api','repos/'+repository))
-    require(info['private'] is True and info['full_name']==repository,'Publication requires the intended private repository')
+    require(info['full_name']==repository,'Publication requires the intended repository')
     tag='v'+version
     notes=(f"Native server mod {version} for BriefcaseNative {config['sdkVersion']}.\n\n"
            'Separate Windows x64 DLL and Linux x64 SO packages. GitHub records and exposes each asset SHA-256 digest. '
@@ -77,9 +77,9 @@ def publish(root, repository, version, commit, draft=False):
         items=[item for item in release['assets'] if item['name']==file.name]
         require(len(items)==1 and items[0]['state']=='uploaded' and items[0]['size']==file.stat().st_size and
                 items[0]['digest']=='sha256:'+digest(file),'Uploaded asset verification failed')
-    require(json.loads(command('gh','api','repos/'+repository))['private'] is True,'Repository visibility changed; draft retained')
+    require(json.loads(command('gh','api','repos/'+repository))['full_name']==repository,'Repository identity changed; draft retained')
     if not draft:command('gh','release','edit',tag,'--repo',repository,'--draft=false','--latest')
-    print('Verified private mod release:',repository,tag)
+    print('Verified mod release:',repository,tag)
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()

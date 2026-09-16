@@ -1,4 +1,4 @@
-"""No-network contracts for the two-platform private release publisher."""
+"""No-network contracts for the two-platform release publisher."""
 import importlib.util,json,struct,tempfile,unittest,zipfile
 from pathlib import Path
 from unittest.mock import patch
@@ -55,10 +55,10 @@ class Publication(unittest.TestCase):
             (self.root/'VERSION').write_text(value)
             with self.assertRaises(ValueError):self.publish()
         self.assertFalse(self.created)
-    def test_public_repository_rejected(self):
+    def test_public_repository_supported(self):
         self.private=False
-        with self.assertRaises(ValueError):self.publish()
-        self.assertFalse(self.created)
+        self.publish()
+        self.assertTrue(self.created and self.edited)
     def test_missing_linux_package_rejected(self):
         self.files[1].unlink()
         with self.assertRaises(OSError):self.publish()
