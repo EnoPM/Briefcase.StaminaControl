@@ -29,13 +29,7 @@ The server binary directory used throughout this guide is:
 
 Stop the server and open the [latest BriefcaseNative release](https://github.com/EnoPM/BriefcaseNative/releases/latest).
 
-On Windows, download `BriefcaseNative-Server-windows-x64-<version>.zip` and extract it directly into `DeceiveInc\Binaries\Win64`. Create `Briefcase\launch.json` in that directory:
-
-```json
-{
-  "serverWin64": "C:\\DeceiveIncServer\\DeceiveInc\\Binaries\\Win64"
-}
-```
+On Windows, download `BriefcaseNative-Server-windows-x64-<version>.zip` and extract it directly into `DeceiveInc\Binaries\Win64`. Run `Briefcase.ServerLauncher.exe` from that directory. BriefcaseNative 0.7.1 or later creates `Briefcase\launch.json` automatically on first launch.
 
 On Linux, install the native runtime dependencies. For Ubuntu 24.04:
 
