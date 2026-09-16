@@ -12,9 +12,21 @@ Les tests utilisént la vraie DLL avec un faux backend ABI, sans jeu ni UE4SS.
 ## Publier
 Publier d'abord le SDK du framework, puis utilisér Actions -> Publish mod release -> Run workflow.
 La version doit correspondre a CMakeLists.txt et briefcase.mod.json. Le mode brouillon est disponible.
+Le workflow compile et teste Windows et Linux, puis publie les deux ZIP et leurs SHA-256 dans une seule release. Il refuse de publier si le dépôt n'est pas privé. Le SDK 0.5.0 est épinglé par son empreinte dans mod-build.json.
 Ne jamais remplacer une version deja distribuee.
 
 ## Installer
 Serveur arrêté, extraire le ZIP de dist/ dans Win64 en conservant Data/config.json existant.
+Sur Linux, choisir le ZIP linux-x64 et l'extraire dans Binaries/Linux. BriefcaseNative 0.5.0 est requis pour cette release. Aucun interpréteur n'est nécessaire à l'exécution du mod.
 Activer le mod dans les réglages locaux de Briefcase si nécessaire.
 Les identifiants, noms de DLL et configurations historiques sont conserves.
+
+## Linux server build
+
+Use the public SDK built with Linux support (including the appended startup code-window service). A Windows DLL cannot run on Linux.
+
+~~~sh
+python3 scripts/build-linux.py --sdk /path/to/extracted/BriefcaseNative-SDK
+~~~
+
+Requires Ubuntu 24.04 x64, Clang 19, CMake 3.28, Ninja and Python 3. The script builds and tests the mod, generates its .so manifest and writes a separate linux-x64 ZIP and checksum under dist. Configuration remains under the same mod ID and Data/config.json.

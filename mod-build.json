@@ -1,7 +1,7 @@
 {
   "repository": "Briefcase.StaminaControl",
   "target": "SuspicionControl",
-  "sdkVersion": "0.3.0",
+  "sdkVersion": "0.5.0",
   "sdkRepository": "EnoPM/BriefcaseNative",
-  "sdkSha256": ""
+  "sdkSha256": "96ab9f3635a48300e57d35a14c6047ba8a83b7ed35281310d2876e39c97bd10c"
 }

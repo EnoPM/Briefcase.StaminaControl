@@ -11,7 +11,7 @@ Enter-VsDevShell -VsInstallPath $vs -SkipAutomaticLocation -DevCmdArguments '-ar
 $cmake=Join-Path $vs 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe'
 $ctest=Join-Path $vs 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/ctest.exe'
 $ninja=Join-Path $vs 'Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe'
-& $cmake -S $project -B (Join-Path $project 'build') -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" '-DCMAKE_BUILD_TYPE=Release' "-DCMAKE_PREFIX_PATH=$sdk"
+& $cmake -S $project -B (Join-Path $project 'build') -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" '-DCMAKE_BUILD_TYPE=Release' "-DCMAKE_PREFIX_PATH=$sdk" "-DBriefcaseNativeSDK_DIR=$sdk/cmake"
 if($LASTEXITCODE){throw 'Configure failed'}
 & $cmake --build (Join-Path $project 'build') --parallel 4
 if($LASTEXITCODE){throw 'Build failed'}

@@ -3,7 +3,7 @@
   "id": "briefcase.suspicion-control",
   "name": "Suspicion Control",
   "author": "BriefcaseNative",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "entry": "Briefcase.SuspicionControl.dll",
   "minimumApi": 1,
   "environment": "server",

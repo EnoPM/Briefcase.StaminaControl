@@ -6,3 +6,7 @@
 /cmake-build-*/
 *.pdb
 *.user
+
+/build-linux/
+__pycache__/
+*.pyc

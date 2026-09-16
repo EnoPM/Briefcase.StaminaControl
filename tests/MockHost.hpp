@@ -1,7 +1,12 @@
 #pragma once
 #include <Briefcase/NativeHookApi.h>
 #include <Briefcase/StartupApi.h>
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <dlfcn.h>
+using HMODULE = void*;
+#endif
 #include <algorithm>
 #include <cstring>
 #include <filesystem>
@@ -57,7 +62,11 @@ struct Backend {
     std::string mode = "Solo", maxPlayers;
     std::vector<int> staged;
     std::vector<std::string> logs;
+    #ifdef __linux__
+    static constexpr auto hash = "b0b275eac71bb8314b8afb5b36368d882faefafc993d5eac05bb5956a7334ef7";
+#else
     static constexpr auto hash = "78afe1dbeecb09027c274def4f0ac855b447dc52ffe3cd9482c1be4341b0dae6";
+#endif
     static Backend &get(void *c) { return *static_cast<Backend *>(c); }
     BcResult thread() {
         if (gameThread)
@@ -108,11 +117,16 @@ struct Backend {
         };
         api.get_build = [](void *c, BcBuild *out) -> BcResult {
             *out = {sizeof(*out)};
+#ifdef __linux__
+            out->pe_timestamp = get(c).supported ? 0 : 1;
+            out->image_size = 0;
+#else
             out->pe_timestamp = get(c).supported ? 0x6a966107 : 0;
             out->image_size = 0x05b60000;
+#endif
             out->engine_major = 4;
             out->engine_minor = 27;
-            strcpy_s(out->executable_sha256, hash);
+            std::strcpy(out->executable_sha256, hash);
             return BC_OK;
         };
         api.validate_handle = [](void *c, BcHandle h) { return get(c).validate(h); };
@@ -174,6 +188,12 @@ struct Backend {
             b.maxPlayers = value;
             return BC_OK;
         };
+        startup.stage_code = [](void* c,const char* sha,const BcCodePatch* p,uint32_t n) -> BcResult {
+            if(!sha || std::strcmp(sha,hash) || n!=2 || p[0].window_size!=23 || p[1].window_size!=25) return BC_INVALID_ARGUMENT;
+            auto& b=get(c);
+            b.staged={p[0].replacement[5],p[0].replacement[17],p[1].replacement[12],p[1].replacement[20]};
+            return BC_OK;
+        };
         startup.stage_i32 = [](void *c, const char *sha, const BcImmediatePatch *p,
                                uint32_t count) -> BcResult {
             auto &b = get(c);
@@ -222,7 +242,7 @@ struct Backend {
                 return e;
             *out = {sizeof(*out)};
             out->flags = b.objects.at(h).flags;
-            strcpy_s(out->path, "World.ServerObject");
+            std::strcpy(out->path, "World.ServerObject");
             return BC_OK;
         };
         unreal.read_property = [](void *c, BcHandle h, const char *name, BcValue *out) -> BcResult {
@@ -393,15 +413,30 @@ class Module {
 
   public:
     explicit Module(const wchar_t *name) {
+#ifdef _WIN32
         dll_ = LoadLibraryW((std::filesystem::current_path() / name).c_str());
+#else
+        auto path=std::filesystem::current_path()/name;
+        path.replace_extension(".so");
+        dll_=dlopen(path.c_str(),RTLD_NOW|RTLD_LOCAL);
+#endif
         check(dll_ != nullptr, "Load server mod DLL");
+#ifdef _WIN32
         load_ = reinterpret_cast<BcModLoad>(GetProcAddress(dll_, "BriefcaseModLoad"));
         unload_ = reinterpret_cast<BcModUnload>(GetProcAddress(dll_, "BriefcaseModUnload"));
+#else
+        load_ = reinterpret_cast<BcModLoad>(dlsym(dll_,"BriefcaseModLoad"));
+        unload_ = reinterpret_cast<BcModUnload>(dlsym(dll_,"BriefcaseModUnload"));
+#endif
         check(load_ && unload_, "Server mod lifecycle entrypoints");
     }
     ~Module() {
         Stop();
+#ifdef _WIN32
         FreeLibrary(dll_);
+#else
+        dlclose(dll_);
+#endif
     }
     BcResult Load(Backend &b) {
         backend_ = &b;
