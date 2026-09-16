@@ -27,12 +27,19 @@ def main():
   expected={manifest['entry'],'briefcase.mod.json','Data/config.json','Licenses/nlohmann-json.txt','Licenses/GCC-runtime.txt','Licenses/GPL-3.txt'}
   assert {file.relative_to(mod).as_posix() for file in mod.rglob('*') if file.is_file()}==expected
   assert len([file for file in stage.rglob('*') if file.is_file()])==len(expected)
+  assert manifest['update']==dict(provider='github-releases',repository='EnoPM/'+config['repository'])
+  rows=[]
+  for file in sorted(stage.rglob('*')):
+   if not file.is_file():continue
+   name=file.relative_to(stage).as_posix();row=dict(path=name,bytes=file.stat().st_size,sha256=hashlib.sha256(file.read_bytes()).hexdigest(),mode=0o644)
+   if name==f"Briefcase/Mods/{manifest['id']}/Data/config.json":row['preserve']=True
+   rows.append(row)
+  (stage/'ModPackage.json').write_text(json.dumps(dict(updateSchema=1,kind='briefcase-mod',platform='linux-x64',modId=manifest['id'],version=manifest['version'],repository=manifest['update']['repository'],files=rows),indent=2)+'\n')
   archive=output/(config['repository']+'-linux-x64-'+manifest['version']+'.zip')
   with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as zipped:
    for file in sorted(stage.rglob('*')):
     if not file.is_file():continue
     info=zipfile.ZipInfo(file.relative_to(stage).as_posix(),(2020,1,1,0,0,0));info.external_attr=(stat.S_IFREG|0o644)<<16;info.create_system=3;info.compress_type=zipfile.ZIP_DEFLATED
     zipped.writestr(info,file.read_bytes())
-  archive.with_suffix('.zip.sha256').write_text(hashlib.sha256(archive.read_bytes()).hexdigest()+'  '+archive.name+'\n')
   print('Verified Linux mod package:',archive)
 if __name__=='__main__':main()

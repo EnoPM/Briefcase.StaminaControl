@@ -14,13 +14,7 @@ if(-not $SdkPath){
  $archive=Join-Path $work $name
  Invoke-WebRequest -Uri "$base/$name" -OutFile $archive
  $actual=(Get-FileHash -LiteralPath $archive).Hash.ToLowerInvariant()
- if($config.sdkSha256){
-  if($config.sdkSha256 -cnotmatch '^[a-f0-9]{64}$' -or $actual -cne $config.sdkSha256){throw 'Pinned SDK checksum mismatch'}
- } else {
-  # Bootstrap first SDK release: use the checksum published next to this fixed version.
-  $checksum=Invoke-WebRequest -Uri "$base/$name.sha256"
-  if($checksum.Content.Trim() -cne "$actual  $name"){throw 'SDK release checksum mismatch'}
- }
+ if($config.sdkSha256 -cnotmatch '^[a-f0-9]{64}$' -or $actual -cne $config.sdkSha256){throw 'Pinned SDK checksum mismatch'}
  Add-Type -AssemblyName System.IO.Compression.FileSystem
  $zip=[IO.Compression.ZipFile]::OpenRead($archive)
  try {

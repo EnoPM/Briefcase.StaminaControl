@@ -21,17 +21,16 @@ def source(root, version, commit):
     else:require(tag_commit==commit,'Existing tag points to another commit')
     require(manifest['environment']=='server' and manifest['minimumApi']==1 and
             re.fullmatch('[a-z0-9.-]+',manifest['id']) and re.fullmatch(r'[A-Za-z0-9_.-]+\.dll',manifest['entry']), 'Invalid server manifest')
+    require(manifest.get('update')==dict(provider='github-releases',repository='EnoPM/'+config['repository']), 'Invalid update repository')
     require(re.fullmatch('[A-Za-z0-9_.-]+',config['repository']) and
             re.fullmatch('[a-f0-9]{64}',config['sdkSha256']), 'SDK checksum must be pinned before publication')
     return config,manifest
 def archive(root, config, manifest, version, platform):
     path=root/'dist'/f"{config['repository']}-{platform}-x64-{version}.zip"
-    checksum=path.with_suffix('.zip.sha256')
-    require(checksum.read_text().strip()==digest(path)+'  '+path.name, 'Archive checksum mismatch')
     expected_manifest=dict(manifest)
     if platform=='linux':expected_manifest['entry']=manifest['entry'].removesuffix('.dll')+'.so'
     prefix='Briefcase/Mods/'+manifest['id']+'/'
-    names={prefix+name for name in (expected_manifest['entry'],'briefcase.mod.json','Data/config.json','Licenses/nlohmann-json.txt')}
+    names={prefix+name for name in (expected_manifest['entry'],'briefcase.mod.json','Data/config.json','Licenses/nlohmann-json.txt')}|{'ModPackage.json'}
     if platform=='linux':names|={prefix+'Licenses/GCC-runtime.txt',prefix+'Licenses/GPL-3.txt'}
     with zipfile.ZipFile(path) as zipped:
         actual=zipped.namelist()
@@ -41,6 +40,10 @@ def archive(root, config, manifest, version, platform):
             require(not item.is_dir() and mode&0o170000 in (0,0o100000) and not mode&0o7000 and
                     not item.flag_bits&1 and item.file_size<=64*1024*1024,'Invalid archive entry')
         require(json.loads(zipped.read(prefix+'briefcase.mod.json'))==expected_manifest,'Packaged manifest mismatch')
+        package=json.loads(zipped.read('ModPackage.json'))
+        require(package['updateSchema']==1 and package['kind']=='briefcase-mod' and package['platform']==platform+'-x64' and
+                package['modId']==manifest['id'] and package['version']==version and package['repository']==manifest['update']['repository'],
+                'Mod update package mismatch')
         json.loads(zipped.read(prefix+'Data/config.json'))
         binary=zipped.read(prefix+expected_manifest['entry'])
         if platform=='linux':
@@ -49,16 +52,16 @@ def archive(root, config, manifest, version, platform):
             require(len(binary)>=64 and binary[:2]==b'MZ','Expected Windows DLL')
             offset=struct.unpack_from('<I',binary,0x3c)[0]
             require(offset+24<=len(binary) and binary[offset:offset+6]==b'PE\0\0\x64\x86','Expected Windows x64 PE')
-    return path,checksum
+    return path
 def publish(root, repository, version, commit, draft=False):
     config,manifest=source(root,version,commit)
     require(re.fullmatch('[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',repository) and repository.split('/')[1]==config['repository'],'Wrong destination repository')
-    files=[file for platform in ('windows','linux') for file in archive(root,config,manifest,version,platform)]
+    files=[archive(root,config,manifest,version,platform) for platform in ('windows','linux')]
     info=json.loads(command('gh','api','repos/'+repository))
     require(info['private'] is True and info['full_name']==repository,'Publication requires the intended private repository')
     tag='v'+version
     notes=(f"Native server mod {version} for BriefcaseNative {config['sdkVersion']}.\n\n"
-           'Separate Windows x64 DLL and Linux x64 SO packages, each with a SHA-256 checksum. '
+           'Separate Windows x64 DLL and Linux x64 SO packages. GitHub records and exposes each asset SHA-256 digest. '
            'Stop the server before installation and preserve existing Data/config.json. '
            'Linux packages contain only native code and data; no Python runtime is needed.\n\n'
            'Build and lifecycle tests run separately on both platforms. Connected-player testing under Linux remains required.\n')
@@ -69,7 +72,7 @@ def publish(root, repository, version, commit, draft=False):
     api=command('gh','release','view',tag,'--repo',repository,'--json','apiUrl','--jq','.apiUrl')
     require(re.fullmatch('https://api.github.com/repos/'+re.escape(repository)+'/releases/[0-9]+',api),'Unexpected draft URL')
     release=json.loads(command('gh','api',api))
-    require(release['draft'] and release['tag_name']==tag and release['target_commitish']==commit and len(release['assets'])==4,'Unexpected release identity')
+    require(release['draft'] and release['tag_name']==tag and release['target_commitish']==commit and len(release['assets'])==2,'Unexpected release identity')
     for file in files:
         items=[item for item in release['assets'] if item['name']==file.name]
         require(len(items)==1 and items[0]['state']=='uploaded' and items[0]['size']==file.stat().st_size and

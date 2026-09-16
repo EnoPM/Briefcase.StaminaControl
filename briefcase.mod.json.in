@@ -8,6 +8,7 @@
   "minimumApi": 1,
   "environment": "server",
   "loadPhase": "ready",
+  "update": {"provider": "github-releases", "repository": "EnoPM/Briefcase.StaminaControl"},
   "capabilities": [
     "log",
     "config",

@@ -31,4 +31,4 @@ Use the public SDK built with Linux support (including the appended startup code
 python3 scripts/build-linux.py --sdk /path/to/extracted/BriefcaseNative-SDK
 ~~~
 
-Requires Ubuntu 24.04 x64, Clang 19, CMake 3.28, Ninja and Python 3. The script builds and tests the mod, generates its .so manifest and writes a separate linux-x64 ZIP and checksum under dist. Configuration remains under the same mod ID and Data/config.json.
+Requires Ubuntu 24.04 x64, Clang 19, CMake 3.28, Ninja and Python 3. The script builds and tests the mod and writes a separate linux-x64 ZIP under dist. GitHub records the SHA-256 digest when the archive is uploaded. Configuration remains under the same mod ID and Data/config.json.
