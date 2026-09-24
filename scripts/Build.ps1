@@ -13,7 +13,7 @@ $ctest=Join-Path $vs 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cte
 $ninja=Join-Path $vs 'Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe'
 & $cmake -S $project -B (Join-Path $project 'build') -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" '-DCMAKE_BUILD_TYPE=Release' "-DCMAKE_PREFIX_PATH=$sdk" "-DBriefcaseNativeSDK_DIR=$sdk/cmake"
 if($LASTEXITCODE){throw 'Configure failed'}
-& $cmake --build (Join-Path $project 'build') --parallel 4
+& $cmake --build (Join-Path $project 'build') --clean-first --parallel 4
 if($LASTEXITCODE){throw 'Build failed'}
 & $ctest --test-dir (Join-Path $project 'build') --output-on-failure
 if($LASTEXITCODE){throw 'Mod contracts failed'}

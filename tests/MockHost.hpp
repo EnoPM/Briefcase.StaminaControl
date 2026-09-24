@@ -65,7 +65,7 @@ struct Backend {
     #ifdef __linux__
     static constexpr auto hash = "b0b275eac71bb8314b8afb5b36368d882faefafc993d5eac05bb5956a7334ef7";
 #else
-    static constexpr auto hash = "78afe1dbeecb09027c274def4f0ac855b447dc52ffe3cd9482c1be4341b0dae6";
+    static constexpr auto hash = "366b09006175c3b6bd2c768787b4e0b3d4e06eee2ebed46f851784f2229066fb";
 #endif
     static Backend &get(void *c) { return *static_cast<Backend *>(c); }
     BcResult thread() {
@@ -121,8 +121,8 @@ struct Backend {
             out->pe_timestamp = get(c).supported ? 0 : 1;
             out->image_size = 0;
 #else
-            out->pe_timestamp = get(c).supported ? 0x6a966107 : 0;
-            out->image_size = 0x05b60000;
+            out->pe_timestamp = get(c).supported ? 0x6aac58e0 : 0;
+            out->image_size = 0x05af8000;
 #endif
             out->engine_major = 4;
             out->engine_minor = 27;
