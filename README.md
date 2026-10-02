@@ -34,3 +34,7 @@ Edit `ue4ss/Mods/BriefcaseSuspicionControl/Data/config.json` while the server is
 ## Remove
 
 Stop the server, remove `ue4ss/Mods/BriefcaseSuspicionControl`, and remove its line from `ue4ss/Mods/mods.txt`. Restart the server.
+
+## License
+
+This mod is licensed under the [MIT License](LICENSE). Third-party components retain their own licenses.
