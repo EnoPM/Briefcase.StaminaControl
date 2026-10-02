@@ -12,10 +12,10 @@ inline bool supported_build(const BcApi *api) {
            b.engine_major==4 && b.engine_minor==27 &&
            std::strcmp(b.executable_sha256,"b0b275eac71bb8314b8afb5b36368d882faefafc993d5eac05bb5956a7334ef7")==0;
 #else
-    return api->get_build(api->context, &b) == BC_OK && b.pe_timestamp == 0x6aac58e0 &&
-           b.image_size == 0x05af8000 && b.engine_major == 4 && b.engine_minor == 27 &&
+    return api->get_build(api->context, &b) == BC_OK && b.pe_timestamp == 0x6ab71ea7 &&
+           b.image_size == 0x05afe000 && b.engine_major == 4 && b.engine_minor == 27 &&
            std::strcmp(b.executable_sha256,
-                       "366b09006175c3b6bd2c768787b4e0b3d4e06eee2ebed46f851784f2229066fb") == 0;
+                       "f2125f09cbeb7922a4912706cc546477454ce229c15ed477af2731a21c828fd3") == 0;
 #endif
 }
 } // namespace server_mods

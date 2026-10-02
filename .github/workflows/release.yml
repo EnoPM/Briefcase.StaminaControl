@@ -1,5 +1,5 @@
-name: Publish mod release
-run-name: Mod release from VERSION - Windows and Linux
+name: Publish Windows UE4SS mod
+run-name: Windows UE4SS mod release from VERSION
 on:
   push:
     branches: [main]
@@ -13,101 +13,70 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: mod-release
+  group: ue4ss-mod-release
   cancel-in-progress: false
 jobs:
   windows:
     runs-on: windows-2025
-    timeout-minutes: 30
-    env:
-      SCCACHE_GHA_ENABLED: "true"
-      CMAKE_C_COMPILER_LAUNCHER: sccache
-      CMAKE_CXX_COMPILER_LAUNCHER: sccache
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Configure compiler cache
-        uses: mozilla-actions/sccache-action@fd02668681acd5f960e1372061bee5e3e987195c # v0.0.11
-        with:
-          version: v0.16.0
-      - name: Validate source
-        shell: pwsh
-        run: |
-          $version = (Get-Content VERSION -Raw).Trim()
-          python scripts/publish.py --source-only --version $version --commit $env:GITHUB_SHA
-          if ($LASTEXITCODE) { throw 'Invalid release source' }
-      - name: Fetch SDK, build and test
-        shell: pwsh
-        run: ./scripts/Build.ps1
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: windows-mod
-          path: |
-            dist/*-windows-x64-*.zip
-          if-no-files-found: error
-          retention-days: 7
-  linux:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    env:
-      SCCACHE_GHA_ENABLED: "true"
-      CMAKE_C_COMPILER_LAUNCHER: sccache
-      CMAKE_CXX_COMPILER_LAUNCHER: sccache
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Configure compiler cache
-        uses: mozilla-actions/sccache-action@fd02668681acd5f960e1372061bee5e3e987195c # v0.0.11
-        with:
-          version: v0.16.0
-      - name: Validate source and install compiler
-        run: |
-          version=$(cat VERSION)
-          python3 scripts/publish.py --source-only --version "$version" --commit "$GITHUB_SHA"
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends clang-19 cmake ninja-build
-      - name: Fetch SDK, build and test
-        run: |
-          sdk=$(python3 scripts/fetch-sdk.py)
-          python3 scripts/build-linux.py --sdk "$sdk"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: linux-mod
-          path: |
-            dist/*-linux-x64-*.zip
-          if-no-files-found: error
-          retention-days: 7
-  publish:
-    needs: [windows, linux]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 90
     permissions:
       contents: write
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      CMAKE_C_COMPILER_LAUNCHER: sccache
+      CMAKE_CXX_COMPILER_LAUNCHER: sccache
+      RUSTUP_TOOLCHAIN: 1.97.1
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: EnoPM/BriefcaseNative
+          ref: v0.8.3
+          path: framework
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          path: framework/repositories/Briefcase.StaminaControl
           persist-credentials: false
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - name: Configure compiler cache
+        uses: mozilla-actions/sccache-action@fd02668681acd5f960e1372061bee5e3e987195c # v0.0.11
         with:
-          pattern: '*-mod'
-          merge-multiple: true
-          path: dist
-      - name: Test publication contracts
-        run: python3 tests/Publication.py
-      - name: Publish both verified packages
+          version: v0.16.0
+      - name: Validate release version
+        shell: pwsh
+        run: |
+          $version = (Get-Content framework/repositories/Briefcase.StaminaControl/VERSION -Raw).Trim()
+          if ($version -cnotmatch '^\d+\.\d+\.\d+$') { throw 'Invalid mod VERSION.' }
+          "MOD_VERSION=$version" >> $env:GITHUB_ENV
+      - name: Install tested Rust toolchain
+        shell: pwsh
+        run: rustup toolchain install 1.97.1 --profile minimal --no-self-update
+      - name: Fetch pinned UE4SS dependencies
+        shell: pwsh
+        env:
+          UPSTREAM_READ_TOKEN: ${{ secrets.UPSTREAM_READ_TOKEN }}
+        run: |
+          if (-not $env:UPSTREAM_READ_TOKEN) { throw 'UPSTREAM_READ_TOKEN is required for the gated Unreal submodule.' }
+          $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('x-access-token:' + $env:UPSTREAM_READ_TOKEN))
+          Write-Output "::add-mask::$encoded"
+          $env:GIT_CONFIG_COUNT = '1'
+          $env:GIT_CONFIG_KEY_0 = 'http.https://github.com/.extraheader'
+          $env:GIT_CONFIG_VALUE_0 = 'AUTHORIZATION: basic ' + $encoded
+          ./framework/scripts/build/Fetch-Dependencies.ps1
+      - name: Build and test Windows mod
+        shell: pwsh
+        run: |
+          ./framework/scripts/ue4ss/Build-ServerMods.ps1 -BuildDirectory ./framework/build-ue4ss-ninja -ModTargets 'Briefcase.StaminaControl.UE4SS'
+          if ($LASTEXITCODE) { throw 'UE4SS mod build failed.' }
+          ctest --test-dir ./framework/build-ue4ss-ninja -R 'Briefcase.DeceiveInc.Contracts|Briefcase.NativeStamina.Sites' --output-on-failure
+          if ($LASTEXITCODE) { throw 'Mod tests failed.' }
+      - name: Package and publish verified mod
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DRAFT: ${{ inputs.draft }}
+          RELEASE_DRAFT: ${{ inputs.draft }}
         run: |
-          args=()
-          if [[ "$DRAFT" == true ]]; then args+=(--draft); fi
-          version=$(cat VERSION)
-          python3 scripts/publish.py --version "$version" --commit "$GITHUB_SHA" --repository "$GITHUB_REPOSITORY" "${args[@]}"
+          $archive = ./framework/scripts/ue4ss/Package-ServerMod.ps1 -RepositoryName Briefcase.StaminaControl -InstallName BriefcaseSuspicionControl -BuildDirectory ./framework/build-ue4ss-ninja
+          $draft = $env:RELEASE_DRAFT -eq 'true'
+          ./framework/scripts/ue4ss/Publish-ServerMod.ps1 -RepositoryName Briefcase.StaminaControl -Repository $env:GITHUB_REPOSITORY -Commit $env:GITHUB_SHA -Archive $archive -Draft:$draft
