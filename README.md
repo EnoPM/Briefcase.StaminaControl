@@ -4,13 +4,17 @@ Suspicion Control adjusts the stamina drain associated with suspicion on a Windo
 
 ## Install
 
+In Briefcase App, add `https://github.com/EnoPM/Briefcase.StaminaControl/releases/latest/download/catalog.json` as a marketplace source in Settings, then open the server's Mods → Available Mods tab and install Suspicion Control while the server is stopped. The app enables the mod automatically.
+
+For manual installation:
+
 1. Install the [latest BriefcaseNative Windows server release](https://github.com/EnoPM/BriefcaseNative/releases/latest) and stop the dedicated server.
 2. Download `Briefcase.StaminaControl-windows-x64-<version>.zip` from this mod's latest release.
 3. Extract the ZIP directly into the server's `DeceiveInc/Binaries/Win64` directory, beside `DeceiveIncServer-Win64-Shipping.exe`.
 4. Open `ue4ss/Mods/mods.txt` and add this line if it is not already present:
 
 ```text
-BriefcaseSuspicionControl : 1
+briefcasesuspicioncontrol : 1
 ```
 
 5. Start `DeceiveIncServer-Win64-Shipping.exe` with Win64 as its working directory. The Briefcase `version.dll` loads this mod through UE4SS.
@@ -19,7 +23,7 @@ When upgrading from an older Briefcase mod package, copy your desired settings a
 
 ## Configure
 
-Edit `ue4ss/Mods/BriefcaseSuspicionControl/Data/config.json` while the server is stopped:
+Edit `ue4ss/Mods/briefcasesuspicioncontrol/Data/config.json` while the server is stopped:
 
 ```json
 {
@@ -33,7 +37,7 @@ Edit `ue4ss/Mods/BriefcaseSuspicionControl/Data/config.json` while the server is
 
 ## Remove
 
-Stop the server, remove `ue4ss/Mods/BriefcaseSuspicionControl`, and remove its line from `ue4ss/Mods/mods.txt`. Restart the server.
+Stop the server, remove `ue4ss/Mods/briefcasesuspicioncontrol`, and remove its line from `ue4ss/Mods/mods.txt`. Restart the server.
 
 ## License
 

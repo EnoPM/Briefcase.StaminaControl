@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: EnoPM/BriefcaseNative
-          ref: 2d0a9865973efea2a0b13d965ce791ee81f40639
+          ref: v0.8.5
           path: framework
           persist-credentials: false
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -77,14 +77,44 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_DRAFT: ${{ inputs.draft }}
         run: |
-          $archive = ./framework/scripts/ue4ss/Package-ServerMod.ps1 -RepositoryName Briefcase.StaminaControl -InstallName BriefcaseSuspicionControl -BuildDirectory ./framework/build-ue4ss-ninja
+          $archive = ./framework/scripts/ue4ss/Package-ServerMod.ps1 -RepositoryName Briefcase.StaminaControl -InstallName briefcasesuspicioncontrol -BuildDirectory ./framework/build-ue4ss-ninja
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           $license = 'framework/repositories/Briefcase.StaminaControl/LICENSE'
           $zip = [IO.Compression.ZipFile]::Open($archive, [IO.Compression.ZipArchiveMode]::Update)
           try {
-            if (-not $zip.GetEntry('ue4ss/Mods/BriefcaseSuspicionControl/LICENSE')) {
-              [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $license, 'ue4ss/Mods/BriefcaseSuspicionControl/LICENSE') | Out-Null
+            if (-not $zip.GetEntry('ue4ss/Mods/briefcasesuspicioncontrol/LICENSE')) {
+              [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $license, 'ue4ss/Mods/briefcasesuspicioncontrol/LICENSE') | Out-Null
             }
           } finally { $zip.Dispose() }
           $draft = $env:RELEASE_DRAFT -eq 'true'
-          ./framework/scripts/ue4ss/Publish-ServerMod.ps1 -RepositoryName Briefcase.StaminaControl -Repository $env:GITHUB_REPOSITORY -Commit $env:GITHUB_SHA -Archive $archive -Draft:$draft
+          $version = (Get-Content framework/repositories/Briefcase.StaminaControl/VERSION -Raw).Trim()
+          $catalogPath = Join-Path (Split-Path $archive -Parent) 'catalog.json'
+          $catalog = [ordered]@{
+            schemaVersion = 2
+            mods = @([ordered]@{
+              id = 'briefcasesuspicioncontrol'
+              name = 'Suspicion Control'
+              description = 'Configure the suspicion drain associated with actions such as running in NPC sight.'
+              version = $version
+              author = 'EnoPM'
+              downloadUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v$version/$(Split-Path $archive -Leaf)"
+              archiveSha256 = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+              documentationUrl = "https://github.com/$env:GITHUB_REPOSITORY#readme"
+              homepageUrl = "https://github.com/$env:GITHUB_REPOSITORY"
+            })
+          }
+          [IO.File]::WriteAllText($catalogPath, ($catalog | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
+          ./framework/scripts/ue4ss/Publish-ServerMod.ps1 -RepositoryName Briefcase.StaminaControl -Repository $env:GITHUB_REPOSITORY -Commit $env:GITHUB_SHA -Archive $archive -Draft
+          gh release upload "v$version" $catalogPath --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE) { throw 'Failed to upload SuspicionControl marketplace catalog.' }
+          $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/v$version" | ConvertFrom-Json
+          $catalogAssets = @($release.assets | Where-Object { $_.name -ceq 'catalog.json' })
+          $catalogHash = (Get-FileHash $catalogPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if (-not $release.draft -or $catalogAssets.Count -ne 1 -or
+              $catalogAssets[0].digest -cne "sha256:$catalogHash") {
+            throw 'SuspicionControl marketplace catalog verification failed; release remains a draft.'
+          }
+          if (-not $draft) {
+            gh release edit "v$version" --repo $env:GITHUB_REPOSITORY --draft=false --latest
+            if ($LASTEXITCODE) { throw 'Failed to publish verified SuspicionControl release.' }
+          }
