@@ -107,7 +107,12 @@ jobs:
           ./framework/scripts/ue4ss/Publish-ServerMod.ps1 -RepositoryName Briefcase.StaminaControl -Repository $env:GITHUB_REPOSITORY -Commit $env:GITHUB_SHA -Archive $archive -Draft
           gh release upload "v$version" $catalogPath --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE) { throw 'Failed to upload SuspicionControl marketplace catalog.' }
-          $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/v$version" | ConvertFrom-Json
+          $releaseApi = gh release view "v$version" --repo $env:GITHUB_REPOSITORY --json apiUrl --jq .apiUrl
+          if ($LASTEXITCODE -or $releaseApi -notmatch '^https://api\.github\.com/repos/EnoPM/Briefcase\.StaminaControl/releases/[0-9]+$') {
+            throw 'Cannot resolve SuspicionControl draft release.'
+          }
+          $release = gh api $releaseApi | ConvertFrom-Json
+          if ($LASTEXITCODE) { throw 'Cannot read SuspicionControl draft release.' }
           $catalogAssets = @($release.assets | Where-Object { $_.name -ceq 'catalog.json' })
           $catalogHash = (Get-FileHash $catalogPath -Algorithm SHA256).Hash.ToLowerInvariant()
           if (-not $release.draft -or $catalogAssets.Count -ne 1 -or
