@@ -19,7 +19,10 @@ class Publication(unittest.TestCase):
             binary=bytearray(128)
             if platform=='windows':binary[:2]=b'MZ';struct.pack_into('<I',binary,0x3c,64);binary[64:70]=b'PE\0\0\x64\x86'
             else:binary[:6]=b'\x7fELF\x02\x01';binary[18:20]=b'\x3e\0'
-            entries={manifest['entry']:bytes(binary),'briefcase.mod.json':json.dumps(manifest).encode(),'Data/config.json':b'{}','Licenses/nlohmann-json.txt':b'license'}
+            entries={manifest['entry']:bytes(binary),'briefcase.mod.json':json.dumps(manifest).encode(),
+                     'Data/config.json':b'{}',
+                     'Data/config.schema.json':b'{"properties":{"multiplier":{"display":"slider","minimum":0,"maximum":1,"step":0.05}}}',
+                     'Licenses/nlohmann-json.txt':b'license'}
             if platform=='linux':entries.update({'Licenses/GCC-runtime.txt':b'license','Licenses/GPL-3.txt':b'license'})
             archive=self.root/'dist'/f'ExampleMod-{platform}-x64-1.0.0.zip'
             prefix='Briefcase/Mods/example.mod/'

@@ -33,7 +33,7 @@ Edit `ue4ss/Mods/briefcasesuspicioncontrol/Data/config.json` while the server is
 }
 ```
 
-`multiplier` accepts 0–10. Use `1` for vanilla drain or `0` to disable the drain controlled by this mod. Leave `diagnostics` at `false` for normal play; `maximumSamples` limits diagnostic samples when enabled. Restart after changes.
+The Briefcase form uses the mod's `Data/config.schema.json` to present `multiplier` as a slider from 0 to 1 in steps of 0.05. Use `1` for vanilla drain or `0` to disable the drain controlled by this mod. The underlying configuration parser still accepts values up to 10 for existing raw JSON configurations. Leave `diagnostics` at `false` for normal play; `maximumSamples` limits diagnostic samples when enabled. Restart after changes.
 
 ## Remove
 

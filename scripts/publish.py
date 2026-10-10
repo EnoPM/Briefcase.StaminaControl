@@ -30,7 +30,8 @@ def archive(root, config, manifest, version, platform):
     expected_manifest=dict(manifest)
     if platform=='linux':expected_manifest['entry']=manifest['entry'].removesuffix('.dll')+'.so'
     prefix='Briefcase/Mods/'+manifest['id']+'/'
-    names={prefix+name for name in (expected_manifest['entry'],'briefcase.mod.json','Data/config.json','Licenses/nlohmann-json.txt')}|{'ModPackage.json'}
+    names={prefix+name for name in (expected_manifest['entry'],'briefcase.mod.json','Data/config.json',
+                                   'Data/config.schema.json','Licenses/nlohmann-json.txt')}|{'ModPackage.json'}
     if platform=='linux':names|={prefix+'Licenses/GCC-runtime.txt',prefix+'Licenses/GPL-3.txt'}
     with zipfile.ZipFile(path) as zipped:
         actual=zipped.namelist()
@@ -45,6 +46,10 @@ def archive(root, config, manifest, version, platform):
                 package['modId']==manifest['id'] and package['version']==version and package['repository']==manifest['update']['repository'],
                 'Mod update package mismatch')
         json.loads(zipped.read(prefix+'Data/config.json'))
+        config_schema=json.loads(zipped.read(prefix+'Data/config.schema.json'))
+        field=config_schema['properties']['multiplier']
+        require(field['display']=='slider' and field['minimum']==0 and field['maximum']==1 and field['step']==0.05,
+                'Suspicion slider schema mismatch')
         binary=zipped.read(prefix+expected_manifest['entry'])
         if platform=='linux':
             require(len(binary)>=20 and binary[:6]==b'\x7fELF\x02\x01' and binary[18:20]==b'\x3e\0','Expected Linux x64 ELF')

@@ -14,7 +14,8 @@ $licenses=Join-Path $mod 'Licenses'
 New-Item -ItemType Directory -Path $licenses -Force|Out-Null
 Copy-Item -LiteralPath (Join-Path $SdkPath 'Licenses/nlohmann-json.txt') -Destination $licenses
 $expected=@("Briefcase/Mods/$($manifest.id)/$($manifest.entry)","Briefcase/Mods/$($manifest.id)/briefcase.mod.json",
- "Briefcase/Mods/$($manifest.id)/Data/config.json","Briefcase/Mods/$($manifest.id)/Licenses/nlohmann-json.txt")
+ "Briefcase/Mods/$($manifest.id)/Data/config.json","Briefcase/Mods/$($manifest.id)/Data/config.schema.json",
+ "Briefcase/Mods/$($manifest.id)/Licenses/nlohmann-json.txt")
 $rows=@(Get-ChildItem -LiteralPath (Join-Path $Stage 'Briefcase') -Recurse -File|ForEach-Object{
  $relative=$_.FullName.Substring($Stage.Length+1).Replace('\','/')
  $row=[ordered]@{path=$relative;bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName).Hash.ToLowerInvariant();mode=420}

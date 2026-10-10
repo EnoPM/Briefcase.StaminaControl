@@ -24,7 +24,8 @@ def main():
   shutil.copyfile('/usr/share/doc/gcc-13-base/copyright',licenses/'GCC-runtime.txt')
   shutil.copyfile('/usr/share/common-licenses/GPL-3',licenses/'GPL-3.txt')
   run('strip','--strip-unneeded',mod/manifest['entry'])
-  expected={manifest['entry'],'briefcase.mod.json','Data/config.json','Licenses/nlohmann-json.txt','Licenses/GCC-runtime.txt','Licenses/GPL-3.txt'}
+  expected={manifest['entry'],'briefcase.mod.json','Data/config.json','Data/config.schema.json',
+            'Licenses/nlohmann-json.txt','Licenses/GCC-runtime.txt','Licenses/GPL-3.txt'}
   assert {file.relative_to(mod).as_posix() for file in mod.rglob('*') if file.is_file()}==expected
   assert len([file for file in stage.rglob('*') if file.is_file()])==len(expected)
   assert manifest['update']==dict(provider='github-releases',repository='EnoPM/'+config['repository'])

@@ -86,7 +86,7 @@ jobs:
               [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $license, 'ue4ss/Mods/briefcasesuspicioncontrol/LICENSE') | Out-Null
             }
             $modRoot = 'framework/repositories/Briefcase.StaminaControl/Data'
-            $assets = @('FormTranslations/en.json', 'FormTranslations/fr.json')
+            $assets = @('FormTranslations/en.json', 'FormTranslations/fr.json', 'config.schema.json')
             foreach ($relative in $assets) {
               $source = Join-Path $modRoot $relative
               if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing form asset: $relative" }
@@ -101,6 +101,15 @@ jobs:
             foreach ($relative in $assets) {
               $entry = 'ue4ss/Mods/briefcasesuspicioncontrol/Data/' + $relative
               if (-not $zip.GetEntry($entry)) { throw "Mod archive is missing $entry" }
+            }
+            $schemaEntry = $zip.GetEntry('ue4ss/Mods/briefcasesuspicioncontrol/Data/config.schema.json')
+            $reader = [IO.StreamReader]::new($schemaEntry.Open())
+            try { $schema = $reader.ReadToEnd() | ConvertFrom-Json -AsHashtable }
+            finally { $reader.Dispose() }
+            $slider = $schema.properties.multiplier
+            if ($slider.display -cne 'slider' -or $slider.minimum -ne 0 -or
+                $slider.maximum -ne 1 -or $slider.step -ne 0.05) {
+              throw 'SuspicionControl slider schema mismatch.'
             }
           } finally { $zip.Dispose() }
           $draft = $env:RELEASE_DRAFT -eq 'true'
