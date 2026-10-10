@@ -1,0 +1,5 @@
+{
+  "mod.config.multiplier": "Multiplicateur de perte d'endurance liée à la suspicion",
+  "mod.config.diagnostics": "Activer les diagnostics",
+  "mod.config.maximumSamples": "Nombre maximal d'échantillons de diagnostic"
+}

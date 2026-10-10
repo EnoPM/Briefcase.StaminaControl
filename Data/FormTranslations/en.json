@@ -1,0 +1,5 @@
+{
+  "mod.config.multiplier": "Suspicion drain multiplier",
+  "mod.config.diagnostics": "Enable diagnostics",
+  "mod.config.maximumSamples": "Maximum diagnostic samples"
+}

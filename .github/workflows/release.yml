@@ -85,6 +85,23 @@ jobs:
             if (-not $zip.GetEntry('ue4ss/Mods/briefcasesuspicioncontrol/LICENSE')) {
               [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $license, 'ue4ss/Mods/briefcasesuspicioncontrol/LICENSE') | Out-Null
             }
+            $modRoot = 'framework/repositories/Briefcase.StaminaControl/Data'
+            $assets = @('FormTranslations/en.json', 'FormTranslations/fr.json')
+            foreach ($relative in $assets) {
+              $source = Join-Path $modRoot $relative
+              if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing form asset: $relative" }
+              $null = Get-Content -LiteralPath $source -Raw | ConvertFrom-Json -AsHashtable
+              $entry = 'ue4ss/Mods/briefcasesuspicioncontrol/Data/' + $relative
+              if ($zip.GetEntry($entry)) { throw "Duplicate form asset: $entry" }
+              [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $source, $entry) | Out-Null
+            }
+          } finally { $zip.Dispose() }
+          $zip = [IO.Compression.ZipFile]::OpenRead($archive)
+          try {
+            foreach ($relative in $assets) {
+              $entry = 'ue4ss/Mods/briefcasesuspicioncontrol/Data/' + $relative
+              if (-not $zip.GetEntry($entry)) { throw "Mod archive is missing $entry" }
+            }
           } finally { $zip.Dispose() }
           $draft = $env:RELEASE_DRAFT -eq 'true'
           $version = (Get-Content framework/repositories/Briefcase.StaminaControl/VERSION -Raw).Trim()
