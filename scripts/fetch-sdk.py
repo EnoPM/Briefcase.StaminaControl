@@ -7,7 +7,7 @@ def fetch(root):
     assert re.fullmatch('[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',config['sdkRepository'])
     assert re.fullmatch(r'\d+\.\d+\.\d+',config['sdkVersion']) and re.fullmatch('[a-f0-9]{64}',config['sdkSha256'])
     cache=root/'.sdk';cache.mkdir(exist_ok=True);work=Path(tempfile.mkdtemp(prefix='linux-',dir=cache))
-    name=f"BriefcaseNative-SDK-{config['sdkVersion']}.zip"
+    name=f"BriefcaseNative-SDK-Server-{config['sdkVersion']}.zip"
     url=f"https://github.com/{config['sdkRepository']}/releases/download/v{config['sdkVersion']}/{name}"
     with urllib.request.urlopen(url,timeout=60) as response:
         data=response.read(16*1024*1024+1)

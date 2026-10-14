@@ -1,0 +1,124 @@
+name: Build Linux server mod
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/linux-package.yml'
+      - 'CMakeLists.txt'
+      - 'VERSION'
+      - 'briefcase.mod.json.in'
+      - 'mod-build.json'
+      - 'Data/**'
+      - 'scripts/build-linux.py'
+      - 'scripts/fetch-sdk.py'
+      - 'scripts/publish.py'
+      - '**/*.cpp'
+      - '**/*.hpp'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Upload the verified Linux package to the matching existing release
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-19 ninja-build
+      - name: Download and verify the pinned server SDK
+        id: sdk
+        run: |
+          sdk=$(python3 scripts/fetch-sdk.py)
+          echo "path=$sdk" >> "$GITHUB_OUTPUT"
+      - name: Build and test Linux mod
+        run: python3 scripts/build-linux.py --sdk '${{ steps.sdk.outputs.path }}'
+      - name: Verify package and publication contracts
+        run: |
+          python3 -m unittest discover -s tests -p Publication.py
+          python3 - <<'PY'
+          import json, pathlib, sys
+          sys.path.insert(0, 'scripts')
+          import publish
+          root = pathlib.Path.cwd()
+          version = (root / 'VERSION').read_text().strip()
+          config = json.loads((root / 'mod-build.json').read_text())
+          manifest = json.loads((root / 'briefcase.mod.json.in').read_text().replace('@MOD_VERSION@', version))
+          archive = publish.archive(root, config, manifest, version, 'linux')
+          print('Verified:', archive)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-server-mod
+          path: dist/*-linux-x64-*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-server-mod
+          path: dist
+      - name: Upload to the matching release and update its catalog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(cat VERSION)
+          tag="v$version"
+          test "$(git rev-list -n 1 "$tag")" = "$GITHUB_SHA" || {
+            echo 'The release tag does not point to the tested source commit.' >&2
+            exit 1
+          }
+          archive="dist/$(jq -r .repository mod-build.json)-linux-x64-$version.zip"
+          test -f "$archive"
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null
+          mkdir -p dist/catalog
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern catalog.json --dir dist/catalog
+          gh release upload "$tag" "$archive" --repo "$GITHUB_REPOSITORY"
+          python3 - "$archive" <<'PY'
+          import hashlib, json, pathlib, sys
+          archive = pathlib.Path(sys.argv[1])
+          path = pathlib.Path('dist/catalog/catalog.json')
+          catalog = json.loads(path.read_text())
+          if catalog['schemaVersion'] != 2 or len(catalog['mods']) != 1:
+              raise ValueError('Expected the existing single-mod Windows catalog')
+          mod = catalog['mods'][0]
+          manifest = json.loads(pathlib.Path('briefcase.mod.json.in').read_text())
+          version = pathlib.Path('VERSION').read_text().strip()
+          windows = {key: mod.pop(key) for key in ('downloadUrl', 'archiveSha256')}
+          linux = {
+              'downloadUrl': f'https://github.com/{manifest["update"]["repository"]}/releases/download/v{version}/{archive.name}',
+              'archiveSha256': hashlib.sha256(archive.read_bytes()).hexdigest(),
+              'installId': manifest['id']
+          }
+          mod['packages'] = {'windows-x64': windows, 'linux-x64': linux}
+          catalog['schemaVersion'] = 3
+          path.write_text(json.dumps(catalog, indent=2) + '\n')
+          PY
+          gh release upload "$tag" dist/catalog/catalog.json --repo "$GITHUB_REPOSITORY" --clobber
+          api=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json apiUrl --jq .apiUrl)
+          for file in "$archive" dist/catalog/catalog.json; do
+            expected=$(sha256sum "$file" | cut -d' ' -f1)
+            actual=$(gh api "$api" --jq ".assets[] | select(.name == \"$(basename "$file")\") | .digest")
+            test "$actual" = "sha256:$expected"
+          done
