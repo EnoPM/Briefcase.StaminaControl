@@ -29,6 +29,6 @@ The resulting package is fully native and does not require Python at runtime.
 
 ## Releases
 
-`VERSION` is the only source of the mod version. A push to `main` that changes `VERSION` builds and tests Windows and Linux, then publishes both archives. The workflow can also be started manually and may keep the release as a draft.
+`VERSION` is the only source of the mod version. A push to `main` that changes `VERSION` publishes the tested Windows archive and builds the Linux archive. After the Windows release exists, run the Linux package workflow with `publish=true` from the same commit to attach the verified Linux archive and platform catalog.
 
 GitHub records the SHA-256 digest of every uploaded asset. Existing release versions must never be replaced.

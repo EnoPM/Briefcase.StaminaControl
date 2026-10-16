@@ -1,10 +1,12 @@
 # Briefcase Suspicion Control
 
-Suspicion Control adjusts the stamina drain associated with suspicion on a Windows x64 Deceive Inc. dedicated server. The repository retains the historical StaminaControl name.
+Suspicion Control adjusts the stamina drain associated with suspicion on Windows and Linux x64 Deceive Inc. dedicated servers. The repository retains the historical StaminaControl name.
 
 ## Install
 
 In Briefcase App, add `https://github.com/EnoPM/Briefcase.StaminaControl/releases/latest/download/catalog.json` as a marketplace source in Settings, then open the server's Mods → Available Mods tab and install Suspicion Control while the server is stopped. The app enables the mod automatically.
+
+On Linux, Briefcase selects the `linux-x64` package and installs the native mod into the selected server instance. Use BriefcaseNative 0.8.7 or newer. The Linux configuration is stored in `Briefcase/Mods/briefcase.suspicion-control/Data/config.json`.
 
 For manual installation:
 
